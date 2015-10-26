@@ -81,46 +81,46 @@ def scott_to_list(xs, f=None):
 def nat(x):
     n = lam(['s', 'n'], [Var, 'n'])
     for i in range(x):
-        n = lam(['s', 'n'], app(var('s'), n))
+        n = lam(['s', 'n'], app('s', n))
     return n
 
 
 bottom = None
 
-Y = lam('f', app(lam('x', app(var('f'), app(var('x'), var('x')))),
-                 lam('x', app(var('f'), app(var('x'), var('x'))))))
+'''
+Y = λf. (λx. (f (x x))) (λx. (f (x x)))
+'''
+Y = lam('f', app(lam('x', app('f', app('x', 'x'))),
+                 lam('x', app('f', app('x', 'x')))))
 bottom = app(Y, Y)
+
+
+def y(expr):
+    return app('Y', expr)
+
 
 c0, c1, c2, c3, c4, c5, c6, c7, c8, c9 = map(nat, range(10))
 
-true = lam('t', lam('f', var('t')))
-false = lam('t', lam('f', var('f')))
+true = lam(['t', 'f'], 't')
+false = lam(['t', 'f'], 'f')
 
-const = lam('a', lam('b', var('a')))
-succ = lam('n', lam('s', lam('z', app(var('s'), var('n')))))
-pred = lam('n', app(app(var('n'), lam('n-', var('n-'))), c0))
+const = true
+succ = lam(['n', 's', 'z'], app('s', 'n'))
+pred = lam('n', app('n', lam('n-', 'n-'), c0))
 
 
-add_ = lam('+', lam('a', lam('b',
-           app(app(var('a'), lam('a-',
-                   app(app(var('+'), var('a-')), app(succ, var('b'))))),
-               var('b')))))
-
-add = app(Y, add_)
+add = y(lam(['+', 'a', 'b'],
+            app('a', lam('a-', app('+', 'a-', app('succ', 'b'))), 'b')))
 
 '''
 const a b = a
 eq m n = m (\m-. n (\n-. eq m- n-)) false) (n (const false) true)
 '''
-eq_ = lam('eq_', lam('m', lam('n',
-          app(app(var('m'),
-              lam('m-', app(app(var('n'), lam('n-',
-                  app(app(var('eq_'), var('m-')), var('n-')))),
-                  false))),
-              app(app(var('n'), app(const, false)), true)))
-          ))
-
-eq = app(Y, eq_)
+eq = y(lam(['eq_', 'm', 'n'],
+       app('m',
+           lam('m-',
+               app('n', lam('n-', app('eq_', 'm-', 'n-')), 'false')),
+           app('n', app('const', 'false')), 'true')))
 
 cons = lam(['h', 't', 'cons', 'nil'], app('cons', 'h', 't'))
 
@@ -129,26 +129,20 @@ nil = lam(['cons', 'nil'], 'nil')
 pair = lam(['a', 'b', 'p'], app('p', 'a', 'b'))
 
 '''
-take n xs = n (\ n- -> xs (\ x xs -> (:) x (take n- xs)) nil)
-              (xs (\ x xs -> (:) x []) bottom)
+take n xs = n (\ n- -> xs (\ x xs -> (:) x (take n- xs)) nil) nil
 
 take _ [] = []
-take 0 (x:xs) = [x]
+take 0 _ = []
 take n (x:xs) = x : take (n-1) xs
 '''
-take_ = lam(['take', 'n', 'xs'],
-            app('n',
-                lam('n-',
-                    app('xs',
-                        lam(['x', 'xs'],
-                            app('cons', 'x', app('take', 'n-', 'xs'))),
-                        'nil')),
-                app('xs',
-                    lam(['x', 'xs'], app('cons', 'x', 'nil')),
-                    'bottom')))
-
-take = app(Y, take_)
-
+take = y(lam(['take', 'n', 'xs'],
+             app('n',
+                 lam('n-',
+                     app('xs',
+                         lam(['x', 'xs'],
+                             app('cons', 'x', app('take', 'n-', 'xs'))),
+                         'nil')),
+                 'nil')))
 
 '''
 tail xs = xs (\ x xs -> xs) bottom
@@ -159,38 +153,26 @@ tail = lam('xs', app(lam(['x', 'xs'], 'xs'), 'bottom'))
 zipWith = Y $ \ zip_ f a b ->
     a (\ x xs -> b (\ y ys -> cons (f x y) (zip_ xs ys)) nil ) nil
 '''
-
-
-zipWith_ = lam(['zipWith_', 'f', 'a', 'b'],
-               app('a',
-                   lam(['x', 'xs'],
-                       app('b',
-                           lam(['y', 'ys'],
-                               app('cons',
-                                   app('f', 'x', 'y'),
-                                   app('zipWith_', 'xs', 'ys'))),
-                           'nil')),
-                   'nil'))
-
-zipWith = app('Y', zipWith_)
+zipWith = y(lam(['zipWith_', 'f', 'a', 'b'],
+                app('a',
+                    lam(['x', 'xs'],
+                        app('b',
+                            lam(['y', 'ys'],
+                                app('cons',
+                                    app('f', 'x', 'y'),
+                                    app('zipWith_', 'xs', 'ys'))),
+                            'nil')),
+                    'nil')))
 
 '''
 fibs = 1 : 1 : zipWith (+) fibs (tail fibs)
 '''
-
-fibs_ = lam('fibs',
-            app('cons',
-                '1',
-                app('cons',
-                    '1',
-                    app('zipWith', '+', 'fibs', app('tail', 'fibs')))))
-
-fibs__ = lam('fibs_', app(app('cons', '1'),
-             app(app(cons, '1'), app(app(app(zipWith, '+'), var('fibs_')),
-                 app(tail, var('fibs_'))))))
-
-
-fibs = app(Y, fibs_)
+fibs = y(lam('fibs',
+             app('cons',
+                 '1',
+                 app('cons',
+                     '1',
+                     app('zipWith', '+', 'fibs', app('tail', 'fibs'))))))
 
 
 def fun(expr):
@@ -238,45 +220,48 @@ def if_prim(expr):
 
 
 '''
-to_int = λx x ( λx- succ(to_int x-)) 0 '
+to_int = λx x ( λx- succ(to_int x-)) 0
 '''
+to_int = y(lam(['to_int', 'x'],
+               app('x',
+                   lam('x-', app('+1',
+                                 app('to_int', 'x-'))),
+                   '0')))
+
+
+to_list = y(lam(['to_list_', 'xs'],
+                app('xs',
+                    lam(['x', 'xs'],
+                        app(':', 'x', app('to_list_', 'xs'))),
+                    '[]')))
+
+
+def print_prim(x):
+    print(x)
+    return x
+
+
+def cons_prim(x):
+    def cons_x(xs):
+        _prim, _list, xs = xs
+        return [_prim, _list, [x]+xs]
+    return [Prim, Fun, cons_x]
 
 
 def prelude(prog):
-    to_int_ = lam(['to_int', 'x'],
-                  app(var('x'),
-                      lam('x-', app(var('succ'),
-                                    app(var('to_int'), var('x-')))),
-                      var('0')))
-
-    to_list_ = lam(['to_list_', 'xs'],
-                   app('xs',
-                       lam(['x', 'xs'],
-                           app(':', 'x', app('to_list_', 'xs'))),
-                       '[]'))
-
-    def p(x):
-        print(x)
-        return x
-
-    def cons_prim(x):
-        def cons_x(xs):
-            _prim, _list, xs = xs
-            return [_prim, _list, [x]+xs]
-        return [Prim, Fun, cons_x]
-
     fs = [('Y', Y),
           ('bottom', bottom),
           ('0', [Prim, Int, 0]),
           ('1', [Prim, Int, 1]),
-          ('succ', [Prim, Fun, succ_int]),
+          ('+1', [Prim, Fun, succ_int]),
           ('+', [Prim, Fun, add_int]),
           ('if', [Prim, Fun, if_prim]),
-          ('to_int', app('Y', to_int_)),
-          ('print', [Prim, Fun, p]),
+          ('to_int', to_int),
+          ('print', [Prim, Fun, print_prim]),
           ('[]', [Prim, List, []]),
           (':', [Prim, Fun, cons_prim]),
-          ('to_list', app('Y', to_list_)),
+          ('succ', succ),
+          ('to_list', to_list),
           ('cons', cons),
           ('nil', nil),
           ('tail', tail),
