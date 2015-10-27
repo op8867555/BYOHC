@@ -145,24 +145,30 @@ take = y(lam(['take', 'n', 'xs'],
                  'nil')))
 
 '''
-tail xs = xs (\ x xs -> xs) bottom
+head xs = xs (\ x xs -> x) bottom
 '''
-tail = lam('xs', app(lam(['x', 'xs'], 'xs'), 'bottom'))
+head = lam('xs', app('xs', lam(['x', 'xs'], 'x'), 'bottom'))
 
 '''
-zipWith = Y $ \ zip_ f a b ->
-    a (\ x xs -> b (\ y ys -> cons (f x y) (zip_ xs ys)) nil ) nil
+tail xs = xs (\ x xs -> xs) bottom
 '''
-zipWith = y(lam(['zipWith_', 'f', 'a', 'b'],
-                app('a',
-                    lam(['x', 'xs'],
-                        app('b',
-                            lam(['y', 'ys'],
-                                app('cons',
-                                    app('f', 'x', 'y'),
-                                    app('zipWith_', 'xs', 'ys'))),
-                            'nil')),
-                    'nil')))
+tail = lam('xs', app('xs', lam(['x', 'xs'], 'xs'), 'bottom'))
+
+'''
+zipWith = \ f -> Y $ zip a b ->
+    a (\ x xs -> b (\ y ys -> cons (f x y) (zip xs ys)) nil ) nil
+'''
+zipWith = lam('f',
+              y(lam(['zipWith_', 'a', 'b'],
+                    app('a',
+                        lam(['x', 'xs'],
+                            app('b',
+                                lam(['y', 'ys'],
+                                    app('cons',
+                                        app('f', 'x', 'y'),
+                                        app('zipWith_', 'xs', 'ys'))),
+                                'nil')),
+                        'nil'))))
 
 '''
 fibs = 1 : 1 : zipWith (+) fibs (tail fibs)
@@ -261,9 +267,11 @@ def prelude(prog):
           ('[]', [Prim, List, []]),
           (':', [Prim, Fun, cons_prim]),
           ('succ', succ),
+          ('add', add),
           ('to_list', to_list),
           ('cons', cons),
           ('nil', nil),
+          ('head', head),
           ('tail', tail),
           ('take', take),
           ('zipWith', zipWith)
