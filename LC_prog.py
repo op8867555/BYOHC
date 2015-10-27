@@ -144,6 +144,16 @@ take = y(lam(['take', 'n', 'xs'],
                          'nil')),
                  'nil')))
 
+take_ = y(lam(["take'", 'n', 'xs'],
+              app('if',
+                  app('==', 'n', '0'),
+                  'nil',
+                  app('xs',
+                      lam(['x', 'xs'],
+                          app('cons',
+                              'x',
+                              app("take'", app('-1', 'n'), 'xs')))))))
+
 '''
 head xs = xs (\ x xs -> x) bottom
 '''
@@ -170,6 +180,17 @@ zipWith = lam('f',
                                 'nil')),
                         'nil'))))
 
+zipWithP = lam('f',
+               y(lam(['zipWithP', 'a', 'b'],
+                     app('if', app('==', 'a', '[]'),
+                         'nil',
+                         app('if', app('==', 'b', '[]'),
+                             'nil',
+                             app(':',
+                                 app('f', app('head', 'a'), app('head', 'b')),
+                                 app('zipWithP',
+                                     app('tail', 'a'),
+                                     app('tail', 'b'))))))))
 '''
 fibs = 1 : 1 : zipWith (+) fibs (tail fibs)
 '''
@@ -179,6 +200,14 @@ fibs = y(lam('fibs',
                  app('cons',
                      '1',
                      app('zipWith', '+', 'fibs', app('tail', 'fibs'))))))
+
+
+fibsP = y(lam('fibs',
+              app(':',
+                  '1',
+                  app(':',
+                      '1',
+                      app('zipWithP', '+', 'fibs', app('tail', 'fibs'))))))
 
 
 def fun(expr):
@@ -208,6 +237,11 @@ def succ_int(expr):
     return [_prim, Int, x+1]
 
 
+def pred_int(expr):
+    _prim, _int, x = expr
+    return [_prim, Int, x-1]
+
+
 def add_int(a):
     def add_a(b):
         _prim, _int, m = a
@@ -223,6 +257,14 @@ def if_prim(expr):
             return a if x else b
         return fun(if2)
     return fun(if1)
+
+
+def eq_prim(expr_a):
+    def eq0(expr_b):
+        _prim, t1, x = expr_a
+        _prim, t2, y = expr_b
+        return [Prim, Bool, t1 == t2 and x == y]
+    return fun(eq0)
 
 
 '''
@@ -260,12 +302,14 @@ def prelude(prog):
           ('0', [Prim, Int, 0]),
           ('1', [Prim, Int, 1]),
           ('+1', [Prim, Fun, succ_int]),
+          ('-1', [Prim, Fun, pred_int]),
           ('+', [Prim, Fun, add_int]),
           ('if', [Prim, Fun, if_prim]),
           ('to_int', to_int),
           ('print', [Prim, Fun, print_prim]),
           ('[]', [Prim, List, []]),
           (':', [Prim, Fun, cons_prim]),
+          ('==', fun(eq_prim)),
           ('succ', succ),
           ('add', add),
           ('to_list', to_list),
@@ -274,6 +318,8 @@ def prelude(prog):
           ('head', head),
           ('tail', tail),
           ('take', take),
-          ('zipWith', zipWith)
+          ("take'", take_),
+          ('zipWith', zipWith),
+          ('zipWithP', zipWithP)
           ]
     return define(fs)(prog)
