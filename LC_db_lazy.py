@@ -70,7 +70,7 @@ def eval0(expr, weak=False, _state=None, debug=False):
             elif f_[0][0] == Prim and f_[0][1] == Fun:
                 v_ = eval(v)
                 _prim, _fun, f = f_[0]
-                expr[0] = f(unbox(v_))
+                expr[0] = box(f(unbox(v_)))[0]
             else:
                 if not weak:
                     expr[0][1] = eval(f)
