@@ -1,3 +1,5 @@
+import operator as op
+
 Var = 'var'
 Lam = 'lam'
 App = 'app'
@@ -242,12 +244,14 @@ def pred_int(expr):
     return [_prim, Int, x-1]
 
 
-def add_int(a):
-    def add_a(b):
-        _prim, _int, m = a
-        _prim, _int, n = b
-        return [_prim, _int, m + n]
-    return [Prim, Fun, add_a]
+def op_int(op):
+    def op_a(a):
+        def op_b(b):
+            _prim, _int, m = a
+            _prim, _int, n = b
+            return [_prim, _int, op(m, n)]
+        return fun(op_b)
+    return op_a
 
 
 def if_prim(expr):
@@ -303,7 +307,10 @@ def prelude(prog):
           ('1', [Prim, Int, 1]),
           ('+1', [Prim, Fun, succ_int]),
           ('-1', [Prim, Fun, pred_int]),
-          ('+', [Prim, Fun, add_int]),
+          ('+', [Prim, Fun, op_int(op.add)]),
+          ('-', [Prim, Fun, op_int(op.sub)]),
+          ('*', [Prim, Fun, op_int(op.mul)]),
+          ('/', [Prim, Fun, op_int(op.truediv)]),
           ('if', [Prim, Fun, if_prim]),
           ('to_int', to_int),
           ('print', [Prim, Fun, print_prim]),
