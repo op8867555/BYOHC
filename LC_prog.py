@@ -212,6 +212,18 @@ fibsP = y(lam('fibs',
                       app('zipWithP', '+', 'fibs', app('tail', 'fibs'))))))
 
 
+'''
+type State s a = s -> (a, s)
+(>>=) :: State a -> (a -> State b) -> State b
+(>>=) s f = λx -> let (a, s') = s x in f a x
+stateBind = λs f x. (s x) (λa s'. f a x)
+stateReturn = λx s. pair x s
+'''
+state_bind = lam(['s', 'f', 'x'],
+                 app(app('s', 'x'), lam(['a', "s'"], app('f', 'a', 'x'))))
+state_return = lam('x', lam('s', app('pair', 'x', 's')))
+
+
 def fun(expr):
     return [Prim, Fun, expr]
 
@@ -300,9 +312,36 @@ def cons_prim(x):
     return [Prim, Fun, cons_x]
 
 
+'''
+do (monad) { name = expr ; ...rest }
+    = expr >>= λname. do (monad) { rest }
+do (monad) { expr ; ... rest }
+    = expr >>= λ_. do (monad) { rest }
+do (monad) { expr }
+    = expr
+'''
+
+
+def do(monad, *stmts):
+    def _do(stmts):
+        stmt, *stmts = stmts
+        name = '_'
+        if isinstance(stmt, tuple):
+            name, stmt = stmt
+        if stmts:
+            return app('##bind', lam(name, stmt))
+        else:
+            return stmt
+    return app(monad, lam(['##bind', 'return'], _do(list(stmts))))
+
+
 def prelude(prog):
     fs = [('Y', Y),
           ('bottom', bottom),
+          ('True', true),
+          ('False', false),
+          ('fst', true),
+          ('snd', false),
           ('0', [Prim, Int, 0]),
           ('1', [Prim, Int, 1]),
           ('+1', [Prim, Fun, succ_int]),
@@ -324,6 +363,7 @@ def prelude(prog):
           ('nil', nil),
           ('head', head),
           ('tail', tail),
+          ('pair', pair),
           ('take', take),
           ("take'", take_),
           ('zipWith', zipWith),
