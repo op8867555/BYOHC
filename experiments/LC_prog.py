@@ -15,9 +15,13 @@ List = 'list'
 def app(f, *vs):
     try:
         f[0]
+        if isinstance(f, str):
+            f = [Var, f]
         ans, *vs = vs
         ans = [App, f, ans]
         for v in vs:
+            if isinstance(v, str):
+                v = [Var, v]
             ans = [App, ans, v]
         return ans
     except ValueError as e:
@@ -25,6 +29,8 @@ def app(f, *vs):
 
 
 def lam(xs, b):
+    if isinstance(b, str):
+        b = [Var, b]
     if not isinstance(xs, list):
         return [Lam, xs, b]
     ans, *xs = reversed(xs)
