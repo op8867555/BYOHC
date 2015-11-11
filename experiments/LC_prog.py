@@ -215,12 +215,13 @@ fibsP = y(lam('fibs',
 '''
 type State s a = s -> (a, s)
 (>>=) :: State a -> (a -> State b) -> State b
-(>>=) s f = λx -> let (a, s') = s x in f a x
-stateBind = λs f x. (s x) (λa s'. f a x)
+(>>=) :: (s -> (a, s)) -> (a -> s -> (b, s)) -> s -> (b, s)
+(>>=) s f = λx -> let (a, s') = s x in f a s'
+stateBind = λs f x. s x (λa s'. f a s')
 stateReturn = λx s. pair x s
 '''
 state_bind = lam(['s', 'f', 'x'],
-                 app(app('s', 'x'), lam(['a', "s'"], app('f', 'a', 'x'))))
+                 app('s', 'x', lam(['a', "s'"], app('f', 'a', "s'"))))
 state_return = lam('x', lam('s', app('pair', 'x', 's')))
 
 
