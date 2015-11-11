@@ -10,6 +10,7 @@ Int = 'int'
 Fun = 'fun'
 Bool = 'bool'
 List = 'list'
+Str = 'str'
 
 
 def app(f, *vs):
@@ -66,6 +67,13 @@ def to_de_bruijn(expr, stack=None):
         return expr
 
 
+def clo(lam, env=None):
+    if not env:
+        env = []
+    _lam, body = to_de_bruijn(lam)
+    return [Clo, body, env]
+
+
 def scott_to_int(x):
     z = to_de_bruijn(c0)
     if x == z:
@@ -101,6 +109,8 @@ Y = λf. (λx. (f (x x))) (λx. (f (x x)))
 Y = lam('f', app(lam('x', app('f', app('x', 'x'))),
                  lam('x', app('f', app('x', 'x')))))
 bottom = app(Y, Y)
+
+iden = lam('x', 'x')
 
 
 def y(expr):
@@ -307,9 +317,22 @@ to_list = y(lam(['to_list_', 'xs'],
                     '[]')))
 
 
-def print_prim(x):
-    print(x)
-    return x
+
+def putStrLn_prim(x):
+    _prim, _str, s = x
+    print(s)
+    return clo(lam('s', app(pair, iden, 's')))
+
+
+def getLineWithPrompt_prim(x):
+    _prim, _str, prompt = x
+    r = input(prompt)
+    return clo(lam('s', app(pair, [Prim, Str, r], 's')))
+
+
+def getLine_prim(s):
+    r = input()
+    return clo(lam('p', app('p', [Prim, Str, r], s)))
 
 
 def cons_prim(x):
@@ -345,6 +368,7 @@ def do(monad, *stmts):
 def prelude(prog):
     fs = [('Y', Y),
           ('bottom', bottom),
+          ('()', iden),
           ('True', true),
           ('False', false),
           ('fst', true),
@@ -359,7 +383,7 @@ def prelude(prog):
           ('/', [Prim, Fun, op_int(op.truediv)]),
           ('if', [Prim, Fun, if_prim]),
           ('to_int', to_int),
-          ('print', [Prim, Fun, print_prim]),
+          ('""', [Prim, Str, ""]),
           ('[]', [Prim, List, []]),
           (':', [Prim, Fun, cons_prim]),
           ('==', fun(eq_prim)),
@@ -374,6 +398,8 @@ def prelude(prog):
           ('take', take),
           ("take'", take_),
           ('zipWith', zipWith),
-          ('zipWithP', zipWithP)
+          ('putStrLn', fun(putStrLn_prim)),
+          ('getLineWithPrompt', fun(getLineWithPrompt_prim)),
+          ('getLine', fun(getLine_prim))
           ]
     return define(fs)(prog)
