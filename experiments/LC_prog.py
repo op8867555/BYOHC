@@ -342,24 +342,22 @@ def cons_prim(x):
     return [Prim, Fun, cons_x]
 
 
-'''
-do (monad) { name = expr ; ...rest }
-    = expr >>= λname. do (monad) { rest }
-do (monad) { expr ; ... rest }
-    = expr >>= λ_. do (monad) { rest }
-do (monad) { expr }
-    = expr
-'''
-
-
 def do(monad, *stmts):
+    '''
+    do (monad) { name = expr ; ...rest }
+        = expr >>= λname. do (monad) { rest }
+    do (monad) { expr ; ... rest }
+        = expr >>= λ_. do (monad) { rest }
+    do (monad) { expr }
+        = expr
+    '''
     def _do(stmts):
         stmt, *stmts = stmts
         name = '_'
         if isinstance(stmt, tuple):
             name, stmt = stmt
         if stmts:
-            return app('##bind', lam(name, stmt))
+            return app('##bind', stmt, lam(name, _do(stmts)))
         else:
             return stmt
     return app(monad, lam(['##bind', 'return'], _do(list(stmts))))
@@ -398,6 +396,7 @@ def prelude(prog):
           ('take', take),
           ("take'", take_),
           ('zipWith', zipWith),
+          ('state_monad', app('pair', state_bind, state_return)),
           ('putStrLn', fun(putStrLn_prim)),
           ('getLineWithPrompt', fun(getLineWithPrompt_prim)),
           ('getLine', fun(getLine_prim))
