@@ -316,6 +316,35 @@ to_list = y(lam(['to_list_', 'xs'],
                         app(':', 'x', app('to_list_', 'xs'))),
                     '[]')))
 
+'''
+class show a where
+    show :: a -> String
+'''
+
+
+def show_int(n):
+    _prim, _int, x = n
+    return [Prim, Str, repr(x)]
+
+
+def show_list(show_a):
+    def show_list_with_show_a(xs):
+        _prim, _list, xs = xs
+        return [Prim,
+                Str,
+                '[{}]'.format(', '.join(map(lambda x: show_a(x)[2], xs)))]
+    return show_list_with_show_a
+
+
+# 這裡應該要 curry 嗎？
+def show_tuple(show_a, show_b):
+    def show_tuple(a):
+        def show_tuple_a(b):
+            _prim, _str, a_ = show_a(a)
+            _prim, _str, b_ = show_b(b)
+            return [Prim, Str, '({}, {})'.format(a_, b_)]
+        return fun(show_tuple_a)
+    return clo(lam('tuple', app('tuple', fun(show_tuple))))
 
 
 def putStrLn_prim(x):
