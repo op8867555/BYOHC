@@ -276,13 +276,11 @@ def op_int(op):
     return op_a
 
 
-def if_prim(expr):
-    def if1(a):
-        def if2(b):
-            _prim, _bool, x = expr
-            return a if x else b
-        return fun(if2)
-    return fun(if1)
+def from_bool(expr):
+    _prim, _bool, x = expr
+    return clo(true) if x else clo(false)
+
+if_ = lam(['p', 't', 'f'], app(fun(from_bool), 'p', 't', 'f'))
 
 
 def eq_prim(expr_a):
@@ -402,7 +400,7 @@ def prelude(prog):
           ('-', [Prim, Fun, op_int(op.sub)]),
           ('*', [Prim, Fun, op_int(op.mul)]),
           ('/', [Prim, Fun, op_int(op.truediv)]),
-          ('if', [Prim, Fun, if_prim]),
+          ('if', if_),
           ('to_int', to_int),
           ('""', [Prim, Str, ""]),
           ('[]', [Prim, List, []]),
