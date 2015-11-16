@@ -166,6 +166,18 @@ take = y(lam(['take', 'n', 'xs'],
                      'nil'))))
 
 '''
+(!!) (x:xs) 0 = x
+(!!) (_:xs) n = (!!) xs (n-1)
+(!!) [] 0 = bottom
+'''
+idx = y(lam(['!!', 'xs', 'n'],
+            app('if', app('==', 'n', '0'),
+                app('xs', 'fst', 'bottom'),
+                app('xs',
+                    lam(['_', 'xs'], app('!!', 'xs', app('-1', 'n'))),
+                    'bottom'))))
+
+'''
 head xs = xs (\ x xs -> x) bottom
 '''
 head = lam('xs', app('xs', lam(['x', 'xs'], 'x'), 'bottom'))
