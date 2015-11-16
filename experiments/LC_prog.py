@@ -153,24 +153,17 @@ take _ [] = []
 take 0 _ = []
 take n (x:xs) = x : take (n-1) xs
 '''
-take = y(lam(['take', 'n', 'xs'],
-             app('n',
-                 lam('n-',
-                     app('xs',
-                         lam(['x', 'xs'],
-                             app('cons', 'x', app('take', 'n-', 'xs'))),
-                         'nil')),
-                 'nil')))
 
-take_ = y(lam(["take'", 'n', 'xs'],
-              app('if',
-                  app('==', 'n', '0'),
-                  'nil',
-                  app('xs',
-                      lam(['x', 'xs'],
-                          app('cons',
-                              'x',
-                              app("take'", app('-1', 'n'), 'xs')))))))
+take = y(lam(['take', 'n', 'xs'],
+             app('if',
+                 app('==', 'n', '0'),
+                 'nil',
+                 app('xs',
+                     lam(['x', 'xs'],
+                         app('cons',
+                             'x',
+                             app('take', app('-1', 'n'), 'xs'))),
+                     'nil'))))
 
 '''
 head xs = xs (\ x xs -> x) bottom
