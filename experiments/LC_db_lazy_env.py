@@ -57,3 +57,12 @@ def eval(expr, env, case='eval', _state=None, debug=False):
     if debug:
         print(_state)
     return x
+
+
+def loads(fp):
+    from json import load
+    return prelude(define(load(fp))(app('runIO', 'main')))
+
+if __name__ == '__main__':
+    from sys import stdin, argv
+    eval_(loads(argv[1] if len(argv) > 2 else stdin))
