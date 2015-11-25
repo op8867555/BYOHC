@@ -102,6 +102,10 @@ def nat(x):
     return n
 
 
+def s(s):
+    return [Prim, Str, s]
+
+
 bottom = None
 
 '''
