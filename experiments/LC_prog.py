@@ -210,17 +210,6 @@ zipWith = lam('f',
                                 'nil')),
                         'nil'))))
 
-zipWithP = lam('f',
-               y(lam(['zipWithP', 'a', 'b'],
-                     app('if', app('==', 'a', '[]'),
-                         'nil',
-                         app('if', app('==', 'b', '[]'),
-                             'nil',
-                             app(':',
-                                 app('f', app('head', 'a'), app('head', 'b')),
-                                 app('zipWithP',
-                                     app('tail', 'a'),
-                                     app('tail', 'b'))))))))
 '''
 fibs = 1 : 1 : zipWith (+) fibs (tail fibs)
 '''
@@ -230,15 +219,6 @@ fibs = y(lam('fibs',
                  app('cons',
                      '1',
                      app('zipWith', '+', 'fibs', app('tail', 'fibs'))))))
-
-
-fibsP = y(lam('fibs',
-              app(':',
-                  '1',
-                  app(':',
-                      '1',
-                      app('zipWithP', '+', 'fibs', app('tail', 'fibs'))))))
-
 
 '''
 type State s a = s -> (a, s)
