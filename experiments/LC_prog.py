@@ -435,9 +435,12 @@ def prelude(prog):
           ('pair', pair),
           ('take', take),
           ('zipWith', zipWith),
+          ('ioBind', state_bind),
+          ('ioReturn', state_return),
           ('state_monad', app('pair', state_bind, state_return)),
           ('putStrLn', fun(putStrLn_prim)),
           ('getLineWithPrompt', fun(getLineWithPrompt_prim)),
-          ('getLine', fun(getLine_prim))
+          ('getLine', fun(getLine_prim)),
+          ('runIO', lam('m', app('m', '()', lam(['_', '_'], '()'))))
           ]
     return define(fs)(prog)
