@@ -363,6 +363,27 @@ def putStrLn_prim(x):
     return clo(lam('s', app(pair, unit, 's')))
 
 
+def putChar_prim(x):
+    _prim, _str, s = x
+    print(s[0], end='')
+    return clo(lam('s', app(pair, unit, 's')))
+
+
+def is_string_prim(x):
+    ans = x[0] == Prim and x[1] == Str
+    return [Prim, Bool, ans]
+
+putStrLn = y(lam(['putStrLn', 'cs'],
+                 app('if', app(fun(is_string_prim), 'cs'),
+                     app(fun(putStrLn_prim), 'cs'),
+                     app('cs',
+                         lam(['c', 'cs'],
+                             app('ioBind',
+                                 app('putChar', 'c'),
+                                 lam('_', app('putStrLn', 'cs')))),
+                         app('putChar', s('\n'))))))
+
+
 def getLineWithPrompt_prim(x):
     _prim, _str, prompt = x
     r = input(prompt)
@@ -438,7 +459,8 @@ def prelude(prog):
           ('ioBind', state_bind),
           ('ioReturn', state_return),
           ('state_monad', app('pair', state_bind, state_return)),
-          ('putStrLn', fun(putStrLn_prim)),
+          ('putChar', fun(putChar_prim)),
+          ('putStrLn', putStrLn),
           ('getLineWithPrompt', fun(getLineWithPrompt_prim)),
           ('getLine', fun(getLine_prim)),
           ('runIO', lam('m', app('m', '()', lam(['_', '_'], '()'))))
