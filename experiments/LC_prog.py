@@ -11,6 +11,7 @@ Fun = 'fun'
 Bool = 'bool'
 List = 'list'
 Str = 'str'
+Unit = 'unit'
 
 
 def app(f, *vs):
@@ -111,6 +112,8 @@ Y = lam('f', app(lam('x', app('f', app('x', 'x'))),
 bottom = app(Y, Y)
 
 iden = lam('x', 'x')
+
+unit = [Prim, Unit]
 
 
 def y(expr):
@@ -353,7 +356,7 @@ def show_tuple(show_a, show_b):
 def putStrLn_prim(x):
     _prim, _str, s = x
     print(s)
-    return clo(lam('s', app(pair, iden, 's')))
+    return clo(lam('s', app(pair, unit, 's')))
 
 
 def getLineWithPrompt_prim(x):
@@ -398,7 +401,7 @@ def do(monad, *stmts):
 def prelude(prog):
     fs = [('Y', Y),
           ('bottom', bottom),
-          ('()', iden),
+          ('()', unit),
           ('True', [Prim, Bool, True]),
           ('False', [Prim, Bool, False]),
           ('const', const),
