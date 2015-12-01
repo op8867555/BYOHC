@@ -61,7 +61,7 @@ def eval(expr, env, case='eval', _state=None, debug=False):
 
 def loads(fp):
     from json import load
-    return prelude(define(load(fp))(app('runIO', 'main')))
+    return prelude(load(fp))
 
 if __name__ == '__main__':
     from sys import stdin, argv
