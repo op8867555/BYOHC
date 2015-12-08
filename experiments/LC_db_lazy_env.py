@@ -47,9 +47,14 @@ def eval(expr, env, case='eval', _state=None, debug=False):
                 _clo, body, env_ = f_
                 return _eval(body, [thunk_v] + env_, case='app')
             elif f_[0] == Prim and f_[1] == Fun:
-                _prim, _fun, prim_fun = f_
+                _prim, _fun, prim_fun, n, args = f_
                 v_ = _eval([Var, 0], [thunk_v] + env, case='prim-f')
-                return prim_fun(v_)
+                args = args + [v_]
+                if n == 1:
+                    res = to_de_bruijn(prim_fun(*args), env=pyenv)
+                    return _eval([Var, 0], [to_thunk(res, env)])
+                else:
+                    return [_prim, _fun, prim_fun, n-1, args]
             raise Exception(f_[0:2])
         else:
             return expr

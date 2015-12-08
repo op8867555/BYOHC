@@ -1,4 +1,5 @@
 import operator as op
+import inspect
 
 Var = 'var'
 Lam = 'lam'
@@ -233,8 +234,9 @@ state_bind = lam(['s', 'f', 'x'],
 state_return = lam('x', lam('s', app('pair', 'x', 's')))
 
 
-def fun(expr):
-    return [Prim, Fun, expr]
+def fun(f):
+    args, varargs, varkw, defaults = inspect.getargspec(f)
+    return [Prim, Fun, f, len(args), []]
 
 
 def scott_list(xs, f=None):
@@ -266,28 +268,20 @@ def pred_int(expr):
 
 
 def op_int(op):
-    def op_a(a):
-        def op_b(b):
-            _prim, _int, m = a
-            _prim, _int, n = b
-            return [_prim, _int, op(m, n)]
-        return fun(op_b)
-    return op_a
+    def f(a, b):
+        _prim, _int, m = a
+        _prim, _int, n = b
+        return [_prim, _int, op(m, n)]
+    return f
 
 
 def from_bool(expr):
     _prim, _bool, x = expr
-    return clo(true) if x else clo(false)
+    return true if x else false
 
 if_ = lam(['p', 't', 'f'], app(fun(from_bool), 'p', 't', 'f'))
 
 
-def eq_prim(expr_a):
-    def eq0(expr_b):
-        _prim, t1, x = expr_a
-        _prim, t2, y = expr_b
-        return [Prim, Bool, t1 == t2 and x == y]
-    return fun(eq0)
 
 
 '''
@@ -299,6 +293,10 @@ to_int = y(lam(['to_int', 'x'],
                                  app('to_int', 'x-'))),
                    '0')))
 
+def eq_prim(expr_a, expr_b):
+    _prim, t1, x = expr_a
+    _prim, t2, y = expr_b
+    return [Prim, Bool, t1 == t2 and x == y]
 
 to_list = y(lam(['to_list_', 'xs'],
                 app('xs',
@@ -346,7 +344,7 @@ def putStrLn_prim(x):
 def putChar_prim(x):
     _prim, _str, s = x
     print(s[0], end='')
-    return clo(lam('s', app(pair, unit, 's')))
+    return lam('s', app(pair, unit, 's'))
 
 
 def is_string_prim(x):
@@ -367,19 +365,17 @@ putStrLn = y(lam(['putStrLn', 'cs'],
 def getLineWithPrompt_prim(x):
     _prim, _str, prompt = x
     r = input(prompt)
-    return clo(lam('s', app(pair, [Prim, Str, r], 's')))
+    return lam('s', app(pair, [Prim, Str, r], 's'))
 
 
 def getLine_prim(s):
     r = input()
-    return clo(lam('p', app('p', [Prim, Str, r], s)))
+    return lam('p', app('p', [Prim, Str, r], s))
 
 
-def cons_prim(x):
-    def cons_x(xs):
-        _prim, _list, xs = xs
-        return [_prim, _list, [x]+xs]
-    return [Prim, Fun, cons_x]
+def cons_prim(x, xs):
+    _prim, _list, xs = xs
+    return [_prim, _list, [x]+xs]
 
 
 def do(monad, *stmts):
@@ -414,13 +410,13 @@ def prelude(prog):
           ('snd', false),
           ('0', [Prim, Int, 0]),
           ('1', [Prim, Int, 1]),
-          ('+1', [Prim, Fun, succ_int]),
-          ('-1', [Prim, Fun, pred_int]),
-          ('+', [Prim, Fun, op_int(op.add)]),
-          ('-', [Prim, Fun, op_int(op.sub)]),
-          ('*', [Prim, Fun, op_int(op.mul)]),
-          ('div', [Prim, Fun, op_int(op.floordiv)]),
-          ('mod', [Prim, Fun, op_int(op.mod)]),
+          ('+1', fun(succ_int)),
+          ('-1', fun(pred_int)),
+          ('+', fun(op_int(op.add))),
+          ('-', fun(op_int(op.sub))),
+          ('*', fun(op_int(op.mul))),
+          ('div', fun(op_int(op.floordiv))),
+          ('mod', fun(op_int(op.mod))),
           ('if', if_),
           ('to_int', to_int),
           ('""', [Prim, Str, ""]),
