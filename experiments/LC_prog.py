@@ -164,7 +164,7 @@ take n (x:xs) = x : take (n-1) xs
 
 take = y(lam(['take', 'n', 'xs'],
              app('if',
-                 app('==', 'n', '0'),
+                 app('==', 'n', [Prim, Int, 0]),
                  'nil',
                  app('xs',
                      lam(['x', 'xs'],
@@ -282,27 +282,11 @@ def from_bool(expr):
 if_ = lam(['p', 't', 'f'], app(fun(from_bool), 'p', 't', 'f'))
 
 
-
-
-'''
-to_int = λx x ( λx- succ(to_int x-)) 0
-'''
-to_int = y(lam(['to_int', 'x'],
-               app('x',
-                   lam('x-', app('+1',
-                                 app('to_int', 'x-'))),
-                   '0')))
-
 def eq_prim(expr_a, expr_b):
     _prim, t1, x = expr_a
     _prim, t2, y = expr_b
     return [Prim, Bool, t1 == t2 and x == y]
 
-to_list = y(lam(['to_list_', 'xs'],
-                app('xs',
-                    lam(['x', 'xs'],
-                        app(':', 'x', app('to_list_', 'xs'))),
-                    '[]')))
 
 '''
 class show a where
@@ -408,8 +392,6 @@ def prelude(prog):
           ('const', const),
           ('fst', true),
           ('snd', false),
-          ('0', [Prim, Int, 0]),
-          ('1', [Prim, Int, 1]),
           ('+1', fun(succ_int)),
           ('-1', fun(pred_int)),
           ('+', fun(op_int(op.add))),
@@ -418,14 +400,10 @@ def prelude(prog):
           ('div', fun(op_int(op.floordiv))),
           ('mod', fun(op_int(op.mod))),
           ('if', if_),
-          ('to_int', to_int),
           ('""', [Prim, Str, ""]),
-          ('[]', [Prim, List, []]),
-          (':', [Prim, Fun, cons_prim]),
           ('==', fun(eq_prim)),
           ('succ', succ),
           ('add', add),
-          ('to_list', to_list),
           ('cons', cons),
           ('nil', nil),
           ('head', head),
