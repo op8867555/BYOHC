@@ -47,26 +47,34 @@ def var(x):
     return [Var, x]
 
 
-def to_de_bruijn(expr, stack=None):
-    if not stack:
-        stack = []
-    if isinstance(expr, str):
-        expr = [Var, expr]
-    try:
-        typ, x = expr[0:2]
-    except ValueError:
-        raise Exception('to_de_bruijn: ' + repr(expr))
-    if typ == Lam:
-        body = expr[2]
-        return [Lam, to_de_bruijn(body, [x] + stack)]
-    elif typ == Var:
-        idx = stack.index(x)
-        return [Var, idx]
-    elif typ == App:
-        y = expr[2]
-        return [App, to_de_bruijn(x, stack), to_de_bruijn(y, stack)]
-    else:
-        return expr
+def to_de_bruijn(expr, stack=None, pyenv=None):
+    if not pyenv:
+        pyenv = {}
+
+    def inner(expr, stack):
+        if not stack:
+            stack = []
+        if isinstance(expr, str):
+            expr = [Var, expr]
+        try:
+            typ, x = expr[0:2]
+        except ValueError:
+            raise Exception('to_de_bruijn: ' + repr(expr))
+        if typ == Lam:
+            body = expr[2]
+            return [Lam, inner(body, [x] + stack)]
+        elif typ == Var:
+            idx = stack.index(x)
+            return [Var, idx]
+        elif typ == App:
+            y = expr[2]
+            return [App, inner(x, stack), inner(y, stack)]
+        elif typ == Prim and expr[1] == 'ffi':
+            _prim, _ffi, pyexp = expr
+            return fun(eval(pyexp, pyenv))
+        else:
+            return expr
+    return inner(expr, stack)
 
 
 def clo(lam, env=None):

@@ -1,10 +1,12 @@
 from LC_prog import *
 
 
-def eval_(expr, env=None, debug=False):
+def eval_(expr, env=None, pyenv=None, debug=False):
     if not env:
         env = []
-    return eval(to_de_bruijn(expr), env, debug=debug)
+    if not pyenv:
+        pyenv = {}
+    return eval(to_de_bruijn(expr, pyenv=pyenv), env, debug=debug, pyenv=pyenv)
 
 
 def to_thunk(v, env):
@@ -20,10 +22,12 @@ def to_thunk(v, env):
         return [False, [v, env]]
 
 
-def eval(expr, env, case='eval', _state=None, debug=False):
+def eval(expr, env, case='eval', _state=None, debug=False, pyenv=None):
 
     if not _state:
         _state = {'count': 0}
+    if not pyenv:
+        pyenv = {}
 
     def _eval(expr, env, case=''):
         typ = expr[0]
@@ -51,7 +55,7 @@ def eval(expr, env, case='eval', _state=None, debug=False):
                 v_ = _eval([Var, 0], [thunk_v] + env, case='prim-f')
                 args = args + [v_]
                 if n == 1:
-                    res = to_de_bruijn(prim_fun(*args), env=pyenv)
+                    res = to_de_bruijn(prim_fun(*args), pyenv=pyenv)
                     return _eval([Var, 0], [to_thunk(res, env)])
                 else:
                     return [_prim, _fun, prim_fun, n-1, args]
@@ -69,5 +73,24 @@ def loads(fp):
     return prelude(load(fp))
 
 if __name__ == '__main__':
-    from sys import stdin, argv
-    eval_(loads(argv[1] if len(argv) > 2 else stdin))
+    from optparse import OptionParser
+    from sys import stdin
+    usage = 'usage: %prog [options]'
+    parser = OptionParser(usage=usage)
+    parser.add_option('-f', '--file',
+                      dest='filename', action='store', type='string')
+    parser.add_option('-m', '--modules',
+                      dest='modules', action='store',
+                      type='string', default='')
+    options, args = parser.parse_args()
+    if options.filename:
+        file = open(options.filename)
+    elif len(args) > 0:
+        file = open(args[0])
+    else:
+        file = stdin
+    modules = options.modules.split()
+    env = {}
+    exec('\n'.join(['import {}'.format(m) for m in modules]), env)
+    loaded = loads(file)
+    eval_(loaded, pyenv=env)
