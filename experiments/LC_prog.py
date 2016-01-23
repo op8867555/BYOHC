@@ -130,7 +130,7 @@ unit = [Prim, Unit]
 
 
 def y(expr):
-    return app('Y', expr)
+    return app('Prelude.Y', expr)
 
 
 c0, c1, c2, c3, c4, c5, c6, c7, c8, c9 = map(nat, range(10))
@@ -144,7 +144,7 @@ pred = lam('n', app('n', lam('n-', 'n-'), c0))
 
 
 add = y(lam(['+', 'a', 'b'],
-            app('a', lam('a-', app('+', 'a-', app('succ', 'b'))), 'b')))
+            app('a', lam('a-', app('+', 'a-', app('Prelude.succ', 'b'))), 'b')))
 
 '''
 const a b = a
@@ -153,8 +153,8 @@ eq m n = m (\m-. n (\n-. eq m- n-)) false) (n (const false) true)
 eq = y(lam(['eq_', 'm', 'n'],
        app('m',
            lam('m-',
-               app('n', lam('n-', app('eq_', 'm-', 'n-')), 'false')),
-           app('n', app('const', 'false')), 'true')))
+               app('n', lam('n-', app('eq_', 'm-', 'n-')), 'Prelude.false')),
+           app('n', app('Prelude.const', 'Prelude.false')), 'Prelude.true')))
 
 cons = lam(['h', 't', 'cons', 'nil'], app('cons', 'h', 't'))
 
@@ -171,15 +171,15 @@ take n (x:xs) = x : take (n-1) xs
 '''
 
 take = y(lam(['take', 'n', 'xs'],
-             app('if',
-                 app('==', 'n', [Prim, Int, 0]),
-                 'nil',
+             app('Prelude.if',
+                 app('Prelude.==', 'n', [Prim, Int, 0]),
+                 'Prelude.nil',
                  app('xs',
                      lam(['x', 'xs'],
-                         app('cons',
+                         app('Prelude.cons',
                              'x',
-                             app('take', app('-1', 'n'), 'xs'))),
-                     'nil'))))
+                             app('take', app('Prelude.-1', 'n'), 'xs'))),
+                     'Prelude.nil'))))
 
 '''
 (!!) (x:xs) 0 = x
@@ -187,21 +187,21 @@ take = y(lam(['take', 'n', 'xs'],
 (!!) [] 0 = bottom
 '''
 idx = y(lam(['!!', 'xs', 'n'],
-            app('if', app('==', 'n', '0'),
-                app('xs', 'fst', 'bottom'),
+            app('if', app('Prelude.==', 'n', '0'),
+                app('xs', 'Prelude.fst', 'Prelude.bottom'),
                 app('xs',
-                    lam(['_', 'xs'], app('!!', 'xs', app('-1', 'n'))),
-                    'bottom'))))
+                    lam(['_', 'xs'], app('Prelude.!!', 'xs', app('Prelude.-1', 'n'))),
+                    'Prelude.bottom'))))
 
 '''
 head xs = xs (\ x xs -> x) bottom
 '''
-head = lam('xs', app('xs', lam(['x', 'xs'], 'x'), 'bottom'))
+head = lam('xs', app('xs', lam(['x', 'xs'], 'x'), 'Prelude.bottom'))
 
 '''
 tail xs = xs (\ x xs -> xs) bottom
 '''
-tail = lam('xs', app('xs', lam(['x', 'xs'], 'xs'), 'bottom'))
+tail = lam('xs', app('xs', lam(['x', 'xs'], 'xs'), 'Prelude.bottom'))
 
 '''
 zipWith = \ f -> Y $ zip a b ->
@@ -213,21 +213,21 @@ zipWith = lam('f',
                         lam(['x', 'xs'],
                             app('b',
                                 lam(['y', 'ys'],
-                                    app('cons',
+                                    app('Prelude.cons',
                                         app('f', 'x', 'y'),
                                         app('zipWith_', 'xs', 'ys'))),
-                                'nil')),
-                        'nil'))))
+                                'Prelude.nil')),
+                        'Prelude.nil'))))
 
 '''
 fibs = 1 : 1 : zipWith (+) fibs (tail fibs)
 '''
 fibs = y(lam('fibs',
-             app('cons',
+             app('Prelude.cons',
                  '1',
-                 app('cons',
+                 app('Prelude.cons',
                      '1',
-                     app('zipWith', '+', 'fibs', app('tail', 'fibs'))))))
+                     app('Prelude.zipWith', '+', 'fibs', app('Prelude.tail', 'fibs'))))))
 
 '''
 type State s a = s -> (a, s)
@@ -239,7 +239,7 @@ stateReturn = λx s. pair x s
 '''
 state_bind = lam(['s', 'f', 'x'],
                  app('s', 'x', lam(['a', "s'"], app('f', 'a', "s'"))))
-state_return = lam('x', lam('s', app('pair', 'x', 's')))
+state_return = lam('x', lam('s', app('Prelude.pair', 'x', 's')))
 
 
 def fun(f):
@@ -344,14 +344,14 @@ def is_string_prim(x):
     return [Prim, Bool, ans]
 
 putStrLn = y(lam(['putStrLn', 'cs'],
-                 app('if', app(fun(is_string_prim), 'cs'),
+                 app('Prelude.if', app(fun(is_string_prim), 'cs'),
                      app(fun(putStrLn_prim), 'cs'),
                      app('cs',
                          lam(['c', 'cs'],
-                             app('ioBind',
-                                 app('putChar', 'c'),
+                             app('Prelude.ioBind',
+                                 app('Prelude.putChar', 'c'),
                                  lam('_', app('putStrLn', 'cs')))),
-                         app('putChar', s('\n'))))))
+                         app('Prelude.putChar', s('\n'))))))
 
 
 def getLineWithPrompt_prim(x):
@@ -392,40 +392,40 @@ def do(monad, *stmts):
 
 
 def prelude(prog):
-    fs = [('Y', Y),
-          ('bottom', bottom),
-          ('()', unit),
-          ('True', true),
-          ('False', false),
-          ('const', const),
-          ('fst', true),
-          ('snd', false),
-          ('+1', fun(succ_int)),
-          ('-1', fun(pred_int)),
-          ('+', fun(op_int(op.add))),
-          ('-', fun(op_int(op.sub))),
-          ('*', fun(op_int(op.mul))),
-          ('div', fun(op_int(op.floordiv))),
-          ('mod', fun(op_int(op.mod))),
-          ('if', if_),
-          ('""', [Prim, Str, ""]),
-          ('==', fun(eq_prim)),
-          ('succ', succ),
-          ('add', add),
-          ('cons', cons),
-          ('nil', nil),
-          ('head', head),
-          ('tail', tail),
-          ('pair', pair),
-          ('take', take),
-          ('zipWith', zipWith),
-          ('ioBind', state_bind),
-          ('ioReturn', state_return),
-          ('state_monad', app('pair', state_bind, state_return)),
-          ('putChar', fun(putChar_prim)),
-          ('putStrLn', putStrLn),
-          ('getLineWithPrompt', fun(getLineWithPrompt_prim)),
-          ('getLine', fun(getLine_prim)),
-          ('runIO', lam('m', app('m', '()', lam(['_', '_'], '()'))))
+    fs = [('Prelude.Y', Y),
+          ('Prelude.bottom', bottom),
+          ('Prelude.()', unit),
+          ('Prelude.True', true),
+          ('Prelude.False', false),
+          ('Prelude.const', const),
+          ('Prelude.fst', true),
+          ('Prelude.snd', false),
+          ('Prelude.+1', fun(succ_int)),
+          ('Prelude.-1', fun(pred_int)),
+          ('Prelude.+', fun(op_int(op.add))),
+          ('Prelude.-', fun(op_int(op.sub))),
+          ('Prelude.*', fun(op_int(op.mul))),
+          ('Prelude.div', fun(op_int(op.floordiv))),
+          ('Prelude.mod', fun(op_int(op.mod))),
+          ('Prelude.if', if_),
+          ('Prelude.""', [Prim, Str, ""]),
+          ('Prelude.==', fun(eq_prim)),
+          ('Prelude.succ', succ),
+          ('Prelude.add', add),
+          ('Prelude.cons', cons),
+          ('Prelude.nil', nil),
+          ('Prelude.head', head),
+          ('Prelude.tail', tail),
+          ('Prelude.pair', pair),
+          ('Prelude.take', take),
+          ('Prelude.zipWith', zipWith),
+          ('Prelude.ioBind', state_bind),
+          ('Prelude.ioReturn', state_return),
+          ('Prelude.state_monad', app('Prelude.pair', state_bind, state_return)),
+          ('Prelude.putChar', fun(putChar_prim)),
+          ('Prelude.putStrLn', putStrLn),
+          ('Prelude.getLineWithPrompt', fun(getLineWithPrompt_prim)),
+          ('Prelude.getLine', fun(getLine_prim)),
+          ('Prelude.runIO', lam('m', app('m', 'Prelude.()', lam(['_', '_'], 'Prelude.()'))))
           ]
     return define(fs)(prog)
