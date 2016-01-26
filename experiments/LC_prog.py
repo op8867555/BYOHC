@@ -394,6 +394,7 @@ def do(monad, *stmts):
 def prelude(prog):
     fs = [('Prelude.Y', Y),
           ('Prelude.bottom', bottom),
+          ('Prelude.error', lam('_', 'Prelude.bottom')),
           ('Prelude.()', unit),
           ('Prelude.True', true),
           ('Prelude.False', false),
