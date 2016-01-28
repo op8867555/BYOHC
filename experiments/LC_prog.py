@@ -64,8 +64,11 @@ def to_de_bruijn(expr, stack=None, pyenv=None):
             body = expr[2]
             return [Lam, inner(body, [x] + stack)]
         elif typ == Var:
-            idx = stack.index(x)
-            return [Var, idx]
+            try:
+                idx = stack.index(x)
+                return [Var, idx]
+            except ValueError:
+                return expr
         elif typ == App:
             y = expr[2]
             return [App, inner(x, stack), inner(y, stack)]
@@ -391,42 +394,40 @@ def do(monad, *stmts):
     return app(monad, lam(['##bind', 'return'], _do(list(stmts))))
 
 
-def prelude(prog):
-    fs = [('Prelude.Y', Y),
-          ('Prelude.bottom', bottom),
-          ('Prelude.error', lam('_', 'Prelude.bottom')),
-          ('Prelude.()', unit),
-          ('Prelude.True', true),
-          ('Prelude.False', false),
-          ('Prelude.const', const),
-          ('Prelude.fst', true),
-          ('Prelude.snd', false),
-          ('Prelude.+1', fun(succ_int)),
-          ('Prelude.-1', fun(pred_int)),
-          ('Prelude.+', fun(op_int(op.add))),
-          ('Prelude.-', fun(op_int(op.sub))),
-          ('Prelude.*', fun(op_int(op.mul))),
-          ('Prelude.div', fun(op_int(op.floordiv))),
-          ('Prelude.mod', fun(op_int(op.mod))),
-          ('Prelude.if', if_),
-          ('Prelude.""', [Prim, Str, ""]),
-          ('Prelude.==', fun(eq_prim)),
-          ('Prelude.succ', succ),
-          ('Prelude.add', add),
-          ('Prelude.cons', cons),
-          ('Prelude.nil', nil),
-          ('Prelude.head', head),
-          ('Prelude.tail', tail),
-          ('Prelude.pair', pair),
-          ('Prelude.take', take),
-          ('Prelude.zipWith', zipWith),
-          ('Prelude.ioBind', state_bind),
-          ('Prelude.ioReturn', state_return),
-          ('Prelude.state_monad', app('Prelude.pair', state_bind, state_return)),
-          ('Prelude.putChar', fun(putChar_prim)),
-          ('Prelude.putStrLn', putStrLn),
-          ('Prelude.getLineWithPrompt', fun(getLineWithPrompt_prim)),
-          ('Prelude.getLine', fun(getLine_prim)),
-          ('Prelude.runIO', lam('m', app('m', 'Prelude.()', lam(['_', '_'], 'Prelude.()'))))
-          ]
-    return define(fs)(prog)
+bindings = [('Prelude.Y', Y),
+            ('Prelude.bottom', bottom),
+            ('Prelude.error', lam('_', 'Prelude.bottom')),
+            ('Prelude.()', unit),
+            ('Prelude.True', true),
+            ('Prelude.False', false),
+            ('Prelude.const', const),
+            ('Prelude.fst', true),
+            ('Prelude.snd', false),
+            ('Prelude.+1', fun(succ_int)),
+            ('Prelude.-1', fun(pred_int)),
+            ('Prelude.+', fun(op_int(op.add))),
+            ('Prelude.-', fun(op_int(op.sub))),
+            ('Prelude.*', fun(op_int(op.mul))),
+            ('Prelude.div', fun(op_int(op.floordiv))),
+            ('Prelude.mod', fun(op_int(op.mod))),
+            ('Prelude.if', if_),
+            ('Prelude.""', [Prim, Str, ""]),
+            ('Prelude.==', fun(eq_prim)),
+            ('Prelude.succ', succ),
+            ('Prelude.add', add),
+            ('Prelude.cons', cons),
+            ('Prelude.nil', nil),
+            ('Prelude.head', head),
+            ('Prelude.tail', tail),
+            ('Prelude.pair', pair),
+            ('Prelude.take', take),
+            ('Prelude.zipWith', zipWith),
+            ('Prelude.ioBind', state_bind),
+            ('Prelude.ioReturn', state_return),
+            ('Prelude.state_monad', app('Prelude.pair', state_bind, state_return)),
+            ('Prelude.putChar', fun(putChar_prim)),
+            ('Prelude.putStrLn', putStrLn),
+            ('Prelude.getLineWithPrompt', fun(getLineWithPrompt_prim)),
+            ('Prelude.getLine', fun(getLine_prim)),
+            ('Prelude.runIO', lam('m', app('m', 'Prelude.()', lam(['_', '_'], 'Prelude.()'))))
+            ]

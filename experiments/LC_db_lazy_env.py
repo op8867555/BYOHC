@@ -1,28 +1,38 @@
 from LC_prog import *
 
 
-def eval_(expr, env=None, pyenv=None, debug=False):
+def eval_(expr, env=None, global_env=None, pyenv=None, debug=False):
     if not env:
         env = []
     if not pyenv:
         pyenv = {}
-    return eval(to_de_bruijn(expr, pyenv=pyenv), env, debug=debug, pyenv=pyenv)
+    if not global_env:
+        global_env = {}
+    return eval(to_de_bruijn(expr, pyenv=pyenv),
+                env, global_env=global_env, debug=debug, pyenv=pyenv)
 
 
-def to_thunk(v, env):
+def to_thunk(v, env, global_env):
     if v[0] == Var:
         _var, x = v
-        if x < len(env):
-            return env[x]
+        if isinstance(x, int):
+            if x < len(env):
+                return env[x]
+            else:
+                return None
         else:
-            return None
+            if x in global_env:
+                return global_env[x]
+            else:
+                return [False, [e, env]]
     elif v[0] == Prim:
         return [True, v]
     else:
         return [False, [v, env]]
 
 
-def eval(expr, env, case='eval', _state=None, debug=False, pyenv=None):
+def eval(expr, env, global_env=None,
+         case='eval', _state=None, debug=False, pyenv=None):
 
     if not _state:
         _state = {'count': 0}
@@ -34,6 +44,7 @@ def eval(expr, env, case='eval', _state=None, debug=False, pyenv=None):
         _state['count'] += 1
         if typ == Var:
             _var, x = expr
+            env = env if isinstance(x, int) else global_env
             computed, v = env[x]
             if not computed:
                 expr_, env_ = v
@@ -45,7 +56,7 @@ def eval(expr, env, case='eval', _state=None, debug=False, pyenv=None):
             return [Clo, body, env]
         elif typ == App:
             _app, f, v = expr
-            thunk_v = to_thunk(v, env)
+            thunk_v = to_thunk(v, env, global_env)
             f_ = _eval(f, env, case='app-f')
             if f_[0] == Clo:
                 _clo, body, env_ = f_
@@ -56,7 +67,7 @@ def eval(expr, env, case='eval', _state=None, debug=False, pyenv=None):
                 args = args + [v_]
                 if n == 1:
                     res = to_de_bruijn(prim_fun(*args), pyenv=pyenv)
-                    return _eval([Var, 0], [to_thunk(res, env)])
+                    return _eval([Var, 0], [to_thunk(res, env, global_env)])
                 else:
                     return [_prim, _fun, prim_fun, n-1, args]
             raise Exception(f_[0:2])
@@ -70,7 +81,7 @@ def eval(expr, env, case='eval', _state=None, debug=False, pyenv=None):
 
 def loads(fp):
     from json import load
-    return prelude(load(fp))
+    return load(fp)
 
 if __name__ == '__main__':
     from optparse import OptionParser
@@ -93,4 +104,7 @@ if __name__ == '__main__':
     env = {}
     exec('\n'.join(['import {}'.format(m) for m in modules]), env)
     loaded = loads(file)
-    eval_(loaded, pyenv=env)
+    global_env = {}
+    for n, f in bindings:
+        global_env[n] = to_thunk(to_de_bruijn(f), [], global_env)
+    eval_(loaded, pyenv=env, global_env=global_env)
