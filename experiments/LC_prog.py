@@ -9,7 +9,6 @@ Clo = 'clo'
 Prim = 'prim'
 Int = 'int'
 Fun = 'fun'
-Bool = 'bool'
 List = 'list'
 Str = 'str'
 Unit = 'unit'
@@ -290,13 +289,11 @@ def from_bool(expr):
     _prim, _bool, x = expr
     return true if x else false
 
-if_ = lam(['p', 't', 'f'], app(fun(from_bool), 'p', 't', 'f'))
-
 
 def eq_prim(expr_a, expr_b):
     _prim, t1, x = expr_a
     _prim, t2, y = expr_b
-    return [Prim, Bool, t1 == t2 and x == y]
+    return true if t1 == t2 and x == y else false
 
 
 '''
@@ -344,7 +341,7 @@ def putChar_prim(x):
 
 def is_string_prim(x):
     ans = x[0] == Prim and x[1] == Str
-    return [Prim, Bool, ans]
+    return true if ans else false
 
 putStrLn = y(lam(['putStrLn', 'cs'],
                  app('Prelude.if', app(fun(is_string_prim), 'cs'),
@@ -405,12 +402,13 @@ bindings = [('Prelude.Y', Y),
             ('Prelude.snd', false),
             ('Prelude.+1', fun(succ_int)),
             ('Prelude.-1', fun(pred_int)),
+            ('Prelude.negate', lam('a', app('Prelude.-', [Prim, Int, 0], 'a'))),
             ('Prelude.+', fun(op_int(op.add))),
             ('Prelude.-', fun(op_int(op.sub))),
             ('Prelude.*', fun(op_int(op.mul))),
             ('Prelude.div', fun(op_int(op.floordiv))),
             ('Prelude.mod', fun(op_int(op.mod))),
-            ('Prelude.if', if_),
+            ('Prelude.if', iden),
             ('Prelude.""', [Prim, Str, ""]),
             ('Prelude.==', fun(eq_prim)),
             ('Prelude.succ', succ),
