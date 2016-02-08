@@ -285,6 +285,14 @@ def op_int(op):
     return f
 
 
+def op_bool(op):
+    def f(a, b):
+        _prim, _int, m = a
+        _prim, _int, n = b
+        return true if op(m, n) else false
+    return f
+
+
 def from_bool(expr):
     _prim, _bool, x = expr
     return true if x else false
@@ -408,6 +416,10 @@ bindings = [('Prelude.Y', Y),
             ('Prelude.*', fun(op_int(op.mul))),
             ('Prelude.div', fun(op_int(op.floordiv))),
             ('Prelude.mod', fun(op_int(op.mod))),
+            ('Prelude.<', fun(op_bool(op.lt))),
+            ('Prelude.>', fun(op_bool(op.gt))),
+            ('Prelude.<=', fun(op_bool(op.le))),
+            ('Prelude.>=', fun(op_bool(op.ge))),
             ('Prelude.if', iden),
             ('Prelude.""', [Prim, Str, ""]),
             ('Prelude.==', fun(eq_prim)),
